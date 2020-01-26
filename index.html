@@ -1,7 +1,204 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <title>Compare Font JSONs</title>
+  <style>
+    .file-input-container {
+      margin-top: 40px;
+    }
+    .file-input-container h5 {
+      margin-bottom: 10px;
+    }
+    .button-container {
+      margin-top: 40px;
+    }
+    button {
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .results-container {
+      margin-top: 60px;
+      display: none;
+    }
+    #identical-message {
+      display: none;
+    }
+  </style>
 </head>
 <body>
-Test Tet
+
+<h1>
+ Compare 2 Font JSONs
+</h1>
+<h3>
+  When you generate new font you get a JSON file that represents this font. <br/>
+  Here you have a tool where you can compare 2 JSON font files in order to find the difference.
+</h3>
+
+<div class="container">
+  <div class="file-input-container">
+    <h5>Choose file 1:</h5>
+    <input type="file" id="file1Picker" name="file1Picker" accept="application/json" onchange="onFile1PickerChange()">
+  </div>
+  <div class="file-input-container">
+    <h5>Choose file 2:</h5>
+    <input type="file" id="file2Picker" name="file2Picker" accept="application/json" onchange="onFile2PickerChange()">
+  </div>
+  <div class="button-container">
+    <button id="compare" onclick="onCompareClick()" disabled>COMPARE</button>
+  </div>
+  <div class="results-container">
+    <h3>Compare Results:</h3>
+    <h5 id="identical-message">These 2 files are identical</h5>
+    <ul></ul>
+  </div>
+
+</div>
+
+
+
+<script>
+let file1SimplifiedJSON = {};
+let file2SimplifiedJSON = {};
+
+
+function findMissingInFile1() {
+  const arr = [];
+  for (let key in file2SimplifiedJSON){
+    if(file2SimplifiedJSON.hasOwnProperty(key) && !file1SimplifiedJSON.hasOwnProperty(key) ){
+      arr.push(file2SimplifiedJSON[key]);
+    }
+  }
+  return arr;
+}
+
+function findMissingInFile2() {
+  const arr = [];
+  for (let key in file1SimplifiedJSON){
+    if(file1SimplifiedJSON.hasOwnProperty(key) && !file2SimplifiedJSON.hasOwnProperty(key) ){
+      arr.push(file1SimplifiedJSON[key]);
+    }
+  }
+  return arr;
+}
+
+function findChangedInFile2() {
+  const arr = [];
+  for (let key in file2SimplifiedJSON){
+    if(file2SimplifiedJSON.hasOwnProperty(key) && file1SimplifiedJSON.hasOwnProperty(key) ){
+      if (file2SimplifiedJSON[key].name !== file1SimplifiedJSON[key].name || file2SimplifiedJSON[key].value !== file1SimplifiedJSON[key].value) {
+        arr.push(file2SimplifiedJSON[key]);
+      }
+    }
+  }
+  return arr;
+}
+
+function onCompareClick() {
+  let changes = {
+    missingInFile1: findMissingInFile1(),
+    missingInFile2: findMissingInFile2(),
+    changedInFile2: findChangedInFile2()
+  };
+
+  document.getElementsByClassName('results-container')[0].style.display = "block";
+
+  if (changes.missingInFile1.length === 0 && changes.missingInFile2.length === 0 && changes.changedInFile2.length === 0) {
+    document.getElementById('identical-message').style.display = "block";
+  }
+  else {
+    debugger;
+    for (let i=0; i<changes.missingInFile1.length; i++) {
+      const obj = changes.missingInFile1[i];
+      const li = document.createElement('li');
+      li.innerHTML = `The icon ${obj.code} with the name '${obj.name}' exists in File 2 but doesn't exist in File 1`;
+      document.getElementsByTagName('ul')[0].appendChild(li);
+    }
+    for (let j=0; j<changes.missingInFile2.length; j++) {
+      const obj = changes.missingInFile2[j];
+      const li = document.createElement('li');
+      li.innerHTML = `The icon ${obj.code} with the name '${obj.name}' exists in File 2 but doesn't exist in File 1`;
+      document.getElementsByTagName('ul')[0].appendChild(li);
+    }
+    for (let l=0; l<changes.changedInFile2.length; l++) {
+      const obj = changes.changedInFile2[l];
+      const li = document.createElement('li');
+      li.innerHTML = `The icon ${obj.code} with the name '${obj.name}' was changed in File 2 (name or icon)`;
+      document.getElementsByTagName('ul')[0].appendChild(li);
+    }
+  }
+
+}
+
+function setCompareButtonState() {
+  if (Object.keys(file1SimplifiedJSON).length > 0 && Object.keys(file2SimplifiedJSON).length > 0) {
+    document.getElementById('compare').removeAttribute('disabled');
+  }
+  else {
+    document.getElementById('compare').setAttribute('disabled', 'disabled');
+  }
+}
+
+function getSimplifiedJSON(originalContentJSON, fl) {
+  const simplifiedContentJSON = {};
+  const icons = originalContentJSON.icons;
+  for (let i=0; i<icons.length; i++) {
+    const iconObject = icons[i];
+    const hexCode = dec2hex(iconObject.properties.code);
+    simplifiedContentJSON[hexCode] = {
+      name: iconObject.properties.name + (fl ? 'f' : ''),
+      code: hexCode,
+      value: hashCode(JSON.stringify(iconObject.icon.paths))
+    };
+  }
+
+  return simplifiedContentJSON;
+}
+
+function onFile1PickerChange() {
+  const selectedFile = document.getElementById('file1Picker').files[0];
+
+  function onReaderLoad(event){
+    var obj = JSON.parse(event.target.result);
+    file1SimplifiedJSON = getSimplifiedJSON(obj);
+    setCompareButtonState();
+  }
+
+  var reader = new FileReader();
+  reader.onload = onReaderLoad;
+  reader.readAsText(selectedFile);
+}
+
+function onFile2PickerChange() {
+  const selectedFile = document.getElementById('file2Picker').files[0];
+
+  function onReaderLoad(event){
+    var obj = JSON.parse(event.target.result);
+    file2SimplifiedJSON = getSimplifiedJSON(obj, true);
+    setCompareButtonState();
+  }
+
+  var reader = new FileReader();
+  reader.onload = onReaderLoad;
+  reader.readAsText(selectedFile);
+}
+
+function dec2hex(dec) {
+  return dec.toString(16);
+}
+
+function hashCode(str) {
+  var hash = 0, i, chr;
+  if (str.length === 0) return hash;
+  for (i = 0; i < str.length; i++) {
+    chr   = str.charCodeAt(i);
+    hash  = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash;
+}
+</script>
+
 </body>
 </html>
