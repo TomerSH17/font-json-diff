@@ -140,14 +140,14 @@ function setCompareButtonState() {
   }
 }
 
-function getSimplifiedJSON(originalContentJSON, fl) {
+function getSimplifiedJSON(originalContentJSON) {
   const simplifiedContentJSON = {};
   const icons = originalContentJSON.icons;
   for (let i=0; i<icons.length; i++) {
     const iconObject = icons[i];
     const hexCode = dec2hex(iconObject.properties.code);
     simplifiedContentJSON[hexCode] = {
-      name: iconObject.properties.name + (fl ? 'f' : ''),
+      name: iconObject.properties.name,
       code: hexCode,
       value: hashCode(JSON.stringify(iconObject.icon.paths))
     };
@@ -175,7 +175,7 @@ function onFile2PickerChange() {
 
   function onReaderLoad(event){
     var obj = JSON.parse(event.target.result);
-    file2SimplifiedJSON = getSimplifiedJSON(obj, true);
+    file2SimplifiedJSON = getSimplifiedJSON(obj);
     setCompareButtonState();
   }
 
