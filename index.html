@@ -103,13 +103,13 @@ function onCompareClick() {
   };
 
   document.getElementsByClassName('results-container')[0].style.display = "block";
+    document.getElementsByTagName('ul').innerHTML = "";
 
   if (changes.missingInFile1.length === 0 && changes.missingInFile2.length === 0 && changes.changedInFile2.length === 0) {
     document.getElementById('identical-message').style.display = "block";
   }
   else {
-      document.getElementById('identical-message').style.display = "none";
-      document.getElementsByTagName('ul').innerHTML = "";
+      document.getElementById('identical-message').style.display = "none";     
     for (let i=0; i<changes.missingInFile1.length; i++) {
       const obj = changes.missingInFile1[i];
       const li = document.createElement('li');
